@@ -1,0 +1,19 @@
+#summary Some thoughts on the architecture and design of this project
+#labels Phase-Implementation
+
+=Elements=
+Right now, I'm "cheating" and treating element nodes as type nodes. I don't think this actually makes sense. I think elements are their own thing and should be parsed accordingly. I'm not really sure how to go about doing that, though.
+
+Anyway, the current implementation is just broken. When I get to an element without any subnodes in the wsdl, I treat it as a simple type. This is broken for the following because they're elements pointing to complex types instead:
+
+Found complex type in bb_appfx_commontypes:ExecuteRecordOperation
+Found complex type in bb_appfx_commontypes:StartBusinessProcess
+Found complex type in bb_appfx_commontypes:ShowReport
+Found complex type in bb_appfx_commontypes:RunBusinessProcess
+Found complex type in bb_appfx_commontypes:ExecuteCLRAction
+Found complex type in bb_appfx_commontypes:ExecuteCustomSectionMethod
+Found complex type in bb_appfx_pagedefinition:AlterExistingPages
+Found complex type in bb_appfx_commontypes:BrowseQueryResults
+Found complex type in bb_appfx_commontypes:ShowPage
+Found complex type in bb_appfx_commontypes:ShowAddDataForm
+Found complex type in bb_appfx_commontypes:ShowDataForm
