@@ -16,8 +16,6 @@ You can add the output files to your project or create a web service framework f
   # Add "-lxml2" to the Other Linker Flags property
   # Add "-I/usr/include/libxml2" to the Other C Flags property
 
-You may get some compile errors of missing .h files.  This is currently a known bug and to work around it simply delete the lines that are giving you errors.  It should not affect your usage of the web service at all.
-
 There are also some compile warnings coming from some of the 3rd-party projects being used.  Again this is a known issue and you should be safe to ignore them.
 
 You can use a given web service as follows:
