@@ -1,0 +1,39 @@
+@class %«name»Response;
+
+@interface %«name» : NSObject {
+	NSURL *address;
+	NSArray *cookies;
+	BOOL logXMLInOut;
+}
+
+@property (copy) NSURL *address;
+@property (assign) BOOL logXMLInOut;
+
+- (id)initWithAddress:(NSString *)anAddress;
+- (NSString *)sendHTTPCallUsingBody:(NSString *)body soapAction:(NSString *)soapAction;
+
+%FOREACH operation in operations
+- (%«name»Response *)%«operation.invokeString»;
+%ENDFOR
+
+@end
+
+@interface %«name»_envelope : NSObject {
+
+}
+
++ (%«name»_envelope *)sharedInstance;
+
+- (NSString *)serializedFormUsingHeaderElements:(NSDictionary *)headerElements bodyElements:(NSDictionary *)bodyElements;
+
+@end
+
+@interface %«name»Response : NSObject {
+	NSArray *headers;
+	NSArray *bodyParts;
+}
+
+@property (retain) NSArray *headers;
+@property (retain) NSArray *bodyParts;
+
+@end
