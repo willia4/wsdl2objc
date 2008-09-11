@@ -1,0 +1,56 @@
+#summary Instructions on how to use the generated code from WSDL2ObjC
+#labels Featured
+
+Once you obtain WSDL2ObjC, code generation is pretty simple.
+
+  # Launch the app
+  # Browse to a WSDL file or enter in a URL
+  # Browse to an output directory
+  # Click "Parse WSDL"
+
+Source code files will be added to the output directory you've specified.  There will be one pair of .h/.m files for each namespace in your WSDL.  For now, it is important to realize that WSDL2ObjC code is reliant on the namespace prefixes used in the WSDL file being the same as the prefixes used by the actual Web Service.  This is partly due to a limitation in the TouchXML library being used to parse the returned XML.
+
+You can add the output files to your project or create a web service framework from them.  Each project that uses the generated web service code will need to link against libxml2 by performing the following for each target in your XCode project:
+
+  # Get info on the target and go to the build tab
+  # Add "-lxml2" to the Other Linker Flags property
+  # Add "-I/usr/include/libxml2" to the Other C Flags property
+
+You may get some compile errors of missing .h files.  This is currently a known bug and to work around it simply delete the lines that are giving you errors.  It should not affect your usage of the web service at all.
+
+There are also some compile warnings coming from some of the 3rd-party projects being used.  Again this is a known issue and you should be safe to ignore them.
+
+You can use a given web service as follows:
+
+{{{
+#import "MyWebService.h"
+
+MyWebServiceBinding *binding = [MyWebService MyWebServiceBinding];
+binding.logXMLInOut = YES;
+
+ns1_MyOperationRequest *request = [[ns1_MyOperationRequest new] autorelease];
+request.attribute = @"attributeValue";
+request.element = [[ns1_MyElement new] autorelease];
+request.element.value = @"elementValue"];
+
+MyWebServiceBindingResponse *response = [binding myOperationUsingParameters:request];
+
+NSArray *responseHeaders = response.headers;
+NSArray *responseBodyParts = response.bodyParts;
+
+for(id header in responseHeaders) {
+  if([header isKindOfClass:[ns2_MyHeaderResponse class]]) {
+    ns2_MyHeaderResponse *headerResponse = (ns2_MyHeaderResponse*)header;
+    
+    // ... Handle ns2_MyHeaderResponse ...
+  }
+}
+
+for(id bodyPart in responseBodyParts) {
+  if([bodyPart isKindOfClass:[ns2_MyBodyResponse class]]) {
+    ns2_MyBodyResponse *body = (ns2_MyBodyResponse*)bodyPart;
+    
+    // ... Handle ns2_MyBodyResponse ...
+  }
+}
+}}}
