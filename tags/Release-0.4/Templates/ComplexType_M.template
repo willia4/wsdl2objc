@@ -1,0 +1,353 @@
+@implementation %«className»
+
+- (id)init
+{
+	if((self = [super init])) {
+%IFDEF sequenceElements
+%FOREACH element in sequenceElements
+
+%IF element.useAnArray
+		%«element.name» = [[NSMutableArray alloc] init];
+%ELSE
+		%«element.name» = 0;
+%ENDIF
+
+%ENDFOR
+%ENDIF
+
+%IFDEF attributes
+%FOREACH attribute in attributes
+		%«attribute.name» = 0;
+%ENDFOR
+%ENDIF
+
+	}
+	
+	return self;
+}
+
+- (void)dealloc
+{
+%IFDEF sequenceElements
+%FOREACH element in sequenceElements
+%IFEQ element.type.assignOrRetain retain
+	if(%«element.name» != nil) [%«element.name» release];
+%ENDIF
+%ENDFOR
+%ENDIF
+
+%IFDEF attributes
+%FOREACH attribute in attributes
+%IFEQ attribute.type.assignOrRetain retain
+	if(%«attribute.name» != nil) [%«attribute.name» release];
+%ENDIF
+%ENDFOR
+%ENDIF
+	
+	[super dealloc];
+}
+
+- (NSString *)nsPrefix
+{
+	return @"%«schema.prefix»";
+}
+
+- (NSString *)serializedFormUsingElementName:(NSString *)elName
+{
+	NSMutableString *serializedForm = [NSMutableString string];
+	
+	[serializedForm appendFormat:@"<%@ xsi:type=\"%«schema.prefix»:%«typeName»\"", elName];
+	[serializedForm appendString:[self serializedAttributeString]];
+	[serializedForm appendFormat:@">"];
+	
+	[serializedForm appendString:[self serializedElementString]];
+	
+	[serializedForm appendFormat:@"\n</%@>", elName];
+	
+	return serializedForm;
+}
+
+- (NSString *)serializedAttributeString
+{
+	NSMutableString *serializedForm = [NSMutableString string];
+	
+%IFDEF superClass
+	[serializedForm appendString:[super serializedAttributeString]];
+%ENDIF
+	
+%IFDEF attributes
+%FOREACH attribute in attributes
+	if(self.%«attribute.name» != 0) {
+%IFEQ attribute.type.assignOrRetain retain
+		[serializedForm appendFormat:@" %«attribute.name»=\"%@\"", self.%«attribute.name»];
+%ELSIFEQ attribute.type.typeName boolean
+		[serializedForm appendFormat:@" %«attribute.name»=\"%@\"", (*self.%«attribute.name» ? @"true" : @"false")];
+%ELSIFEQ attribute.type.typeName long
+		[serializedForm appendFormat:@" %«attribute.name»=\"%d\"", *self.%«attribute.name»];
+%ELSIFEQ attribute.type.typeName short
+		[serializedForm appendFormat:@" %«attribute.name»=\"%d\"", *self.%«attribute.name»];
+%ELSIFEQ attribute.type.typeName int
+		[serializedForm appendFormat:@" %«attribute.name»=\"%d\"", *self.%«attribute.name»];
+%ELSIFEQ attribute.type.typeName double
+		[serializedForm appendFormat:@" %«attribute.name»=\"%f\"", *self.%«attribute.name»];
+%ELSIFNEQ attribute.type.enumCount 0
+		[serializedForm appendFormat:@" %«attribute.name»=\"%@\"", %«attribute.type.className»_stringFromEnum(self.%«attribute.name»)];
+%ENDIF
+	}
+
+%ENDFOR
+%ENDIF
+	
+	return serializedForm;
+}
+
+- (NSString *)serializedElementString
+{
+	NSMutableString *serializedForm = [NSMutableString string];
+	
+%IFDEF superClass
+	[serializedForm appendString:[super serializedElementString]];
+%ENDIF
+	
+%IFDEF sequenceElements
+%FOREACH element in sequenceElements
+	if(self.%«element.name» != 0) {
+%IFEQ element.type.assignOrRetain retain
+
+%IF element.useAnArray
+		for(%«element.type.classNameWithPtr» child in self.%«element.name») {
+			[serializedForm appendFormat:@"\n%@", [child serializedFormUsingElementName:@"%«element.name»"]];
+		}
+%ELSE
+		[serializedForm appendFormat:@"\n%@", [self.%«element.name» serializedFormUsingElementName:@"%«element.name»"]];
+%ENDIF
+
+%ELSIFEQ element.type.typeName boolean
+		[serializedForm appendFormat:@"\n<%«element.name»>%@</%«element.name»>", (*self.%«element.name» ? @"true" : @"false")];
+%ELSIFEQ element.type.typeName long
+		[serializedForm appendFormat:@"\n<%«element.name»>%d</%«element.name»>", *self.%«element.name»];
+%ELSIFEQ element.type.typeName short
+		[serializedForm appendFormat:@"\n<%«element.name»>%d</%«element.name»>", *self.%«element.name»];
+%ELSIFEQ element.type.typeName int
+		[serializedForm appendFormat:@"\n<%«element.name»>%d</%«element.name»>", *self.%«element.name»];
+%ELSIFEQ element.type.typeName double
+		[serializedForm appendFormat:@"\n<%«element.name»>%f</%«element.name»>", *self.%«element.name»];
+%ELSIFNEQ element.type.enumCount 0
+
+%IF element.useAnArray
+		for(NSNumber *intRepresentation in self.%«element.name») {
+			%«element.type.className» enumRepresentation = (%«element.type.className»)[intRepresentation intValue];
+			[serializedForm appendFormat:@"\n<%«element.name»>%@</%«element.name»>", %«element.type.className»_stringFromEnum(enumRepresentation)];
+		}
+%ELSE
+		[serializedForm appendFormat:@"\n<%«element.name»>%@</%«element.name»>", %«element.type.className»_stringFromEnum(self.%«element.name»)];
+%ENDIF
+
+%ENDIF
+	}
+%ENDFOR
+%ENDIF
+	
+	return serializedForm;
+}
+
+/* elements */
+%IFDEF sequenceElements
+%FOREACH element in sequenceElements
+
+%IF element.useAnArray
+
+@synthesize %«element.name»;
+
+- (void)add%«element.uname»:(%«element.type.classNameWithPtr»)toAdd
+{
+%IFEQ element.type.assignOrRetain assign
+	[%«element.name» addObject:[NSNumber numberWithInt:(int)toAdd]];
+%ELSE
+	if(toAdd != nil) [%«element.name» addObject:toAdd];
+%ENDIF
+}
+
+%ELSE
+
+@synthesize %«element.name»;
+
+%ENDIF
+
+%ENDFOR
+%ENDIF
+
+
+/* attributes */
+%IFDEF attributes
+
+- (NSDictionary *)attributes
+{
+	NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
+%FOREACH attribute in attributes
+%IFEQ attribute.type.assignOrRetain retain
+	[attributes setObject:self.%«attribute.name» forKey:@"%«attribute.name»"];
+%ELSE
+	[attributes setObject:[NSNumber numberWithInt:(int)self.%«attribute.name»] forKey:@"%«attribute.name»"];
+%ENDIF
+%ENDFOR
+	
+	return attributes;
+}
+
+%FOREACH attribute in attributes
+
+@synthesize %«attribute.name»;
+
+%ENDFOR
+%ENDIF
+
+
++ (%«classNameWithPtr»)deserializeNode:(xmlNodePtr)cur
+{
+	%«className» *newObject = [[%«className» new] autorelease];
+	
+	[newObject deserializeAttributesFromNode:cur];
+	[newObject deserializeElementsFromNode:cur];
+	
+	return newObject;
+}
+
+- (void)deserializeAttributesFromNode:(xmlNodePtr)cur
+{
+
+%IFDEF superClass
+	[super deserializeAttributesFromNode:cur];
+%ENDIF
+
+%IF hasAttributes
+	xmlChar *attrValue = NULL;
+	NSString *attrString;
+	
+%FOREACH attribute in attributes
+	attrValue = xmlGetProp(cur, (const xmlChar *) "%«attribute.name»");
+	if(attrValue != NULL) {
+		attrString = [NSString stringWithCString:(char*)attrValue encoding:NSUTF8StringEncoding];
+
+%IFEQ attribute.type.typeName boolean
+		self.%«attribute.name» = [[[USBoolean alloc] initWithBool:([attrString boolValue] ? YES : NO)] autorelease];
+%ELSIFEQ attribute.type.typeName long
+		self.%«attribute.name» = [NSNumber numberWithLong:[attrString longValue]];
+%ELSIFEQ attribute.type.typeName long
+		self.%«attribute.name» = [NSNumber numberWithShort:[attrString shortValue]];
+%ELSIFEQ attribute.type.typeName int
+		self.%«attribute.name» = [NSNumber numberWithInt:[attrString intValue]];
+%ELSIFEQ attribute.type.typeName double
+		self.%«attribute.name» = [NSNumber numberWithDouble:[attrString doubleValue]];
+%ELSIFEQ attribute.type.typeName string
+		self.%«attribute.name» = attrString;
+%ELSIFNEQ attribute.type.enumCount 0
+		self.%«attribute.name» = %«attribute.type.className»_enumFromString(attrString);
+%ELSE
+#warning Not handling attribute %«attribute.name» with type %«attribute.type.typeName»
+%ENDIF
+		xmlFree(attrValue);
+	}
+%ENDFOR
+%ENDIF
+}
+
+- (void)deserializeElementsFromNode:(xmlNodePtr)cur
+{
+	
+%IFDEF superClass
+	[super deserializeElementsFromNode:cur];
+%ENDIF
+	
+%IF hasSequenceElements
+	for( cur = cur->children ; cur != NULL ; cur = cur->next ) {
+		if(cur->type == XML_ELEMENT_NODE) {
+			xmlChar *elementText = xmlNodeListGetString(cur->doc, cur->children, 1);
+			NSString *elementString = nil;
+			
+			if(elementText != NULL) {
+				elementString = [NSString stringWithCString:(char*)elementText encoding:NSUTF8StringEncoding];
+				xmlFree(elementText);
+			}
+%FOREACH element in sequenceElements
+			if(xmlStrEqual(cur->name, (const xmlChar *) "%«element.name»")) {
+%IFEQ element.type.assignOrRetain retain
+				
+				Class elementClass = nil;
+				xmlChar *instanceType = xmlGetNsProp(cur, (const xmlChar *) "type", (const xmlChar *) "http://www.w3.org/2001/XMLSchema-instance");
+				if(instanceType == NULL) {
+					elementClass = [%«element.type.classNameWithoutPtr» class];
+				} else {
+					NSString *elementTypeString = [NSString stringWithCString:(char*)instanceType encoding:NSUTF8StringEncoding];
+					
+					NSArray *elementTypeArray = [elementTypeString componentsSeparatedByString:@":"];
+					
+					NSString *elementClassString = nil;
+					if([elementTypeArray count] > 1) {
+						NSString *prefix = [elementTypeArray objectAtIndex:0];
+						NSString *localName = [elementTypeArray objectAtIndex:1];
+						
+						xmlNsPtr elementNamespace = xmlSearchNs(cur->doc, cur, (const xmlChar *)[prefix UTF8String]);
+						
+						NSString *standardPrefix = [[USGlobals sharedInstance].wsdlStandardNamespaces objectForKey:[NSString stringWithCString:(char*)elementNamespace->href]];
+						
+						elementClassString = [NSString stringWithFormat:@"%@_%@", standardPrefix, localName];
+					} else {
+						elementClassString = [elementTypeString stringByReplacingOccurrencesOfString:@":" withString:@"_" options:0 range:NSMakeRange(0, [elementTypeString length])];
+					}
+					
+					elementClass = NSClassFromString(elementClassString);
+					xmlFree(instanceType);
+				}
+				
+				id newChild = [elementClass deserializeNode:cur];
+				
+%IF element.useAnArray
+				if(newChild != nil) [self.%«element.name» addObject:newChild];
+%ELSE
+				self.%«element.name» = newChild;
+%ENDIF
+
+%ELSIFEQ element.type.typeName boolean
+				self.%«element.name» = malloc(sizeof(%«element.type.classNameWithoutPtr»));
+				*self.%«element.name» = ([elementString boolValue] ? YES : NO);
+
+%ELSIFEQ element.type.typeName long
+				self.%«element.name» = malloc(sizeof(%«element.type.classNameWithoutPtr»));
+				*self.%«element.name» = (long)[elementString longLongValue];
+
+%ELSIFEQ element.type.typeName short
+				self.%«element.name» = malloc(sizeof(%«element.type.classNameWithoutPtr»));
+				*self.%«element.name» = (short)[elementString longLongValue];
+
+%ELSIFEQ element.type.typeName int
+				self.%«element.name» = malloc(sizeof(%«element.type.classNameWithoutPtr»));
+				*self.%«element.name» = [elementString intValue];
+
+%ELSIFEQ element.type.typeName double
+				self.%«element.name» = malloc(sizeof(%«element.type.classNameWithoutPtr»));
+				*self.%«element.name» = [elementString doubleValue];
+
+%ELSIFNEQ element.type.enumCount 0
+				
+				%«element.type.className» enumRepresentation = %«element.type.className»_enumFromString(elementString);
+%IF element.useAnArray
+				NSNumber *intRepresentation = [NSNumber numberWithInt:(int)enumRepresentation];
+				[self.%«element.name» addObject:intRepresentation];
+%ELSE
+				self.%«element.name» = enumRepresentation;
+%ENDIF
+
+%ELSE
+#warning Not handling element %«element.name» with type %«element.type.typeName»
+
+%ENDIF
+			}
+%ENDFOR
+		}
+	}
+%ENDIF
+
+}
+
+@end

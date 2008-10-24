@@ -1,0 +1,2 @@
+#import "%«prefix».h"
+#import <libxml/xmlstring.h>
