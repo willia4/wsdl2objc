@@ -16,7 +16,10 @@ You can add the output files to your project or create a web service framework f
   # Add "-lxml2" to the Other Linker Flags property
   # Add "-I/usr/include/libxml2" to the Other C Flags property
 
-There are also some compile warnings coming from some of the 3rd-party projects being used.  Again this is a known issue and you should be safe to ignore them.
+If you are building an iPhone project also perform the following
+
+ # Right click on the Frameworks folder in your project and select Add -> Existing Frameworks...
+ # Select the CFNetwork.framework appropriate for your iPhone build
 
 You can use a given web service as follows:
 
