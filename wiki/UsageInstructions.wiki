@@ -60,13 +60,11 @@ for(id bodyPart in responseBodyParts) {
 Here's another code sample:
 Assume the following:
   * A SOAP service called "Friends"
-  * A SOAP method called GetFavoriteColor that has an request attribute called Friend, and a response attribute called Color (i.e. you're asking it to return you the favorite color for a given a friend)
+  * A SOAP method called GetFavoriteColor that has a request attribute called Friend, and a response attribute called Color (i.e. you're asking it to return you the favorite color for a given a friend)
   * All the methods in this service need HTTP authentication, using a username and password that you acquired from the user via text fields
 
 {{{
 - (IBAction)pressedRequestButton:(id)sender {
-	[u resignFirstResponder];
-	[p resignFirstResponder];
 	FriendsBinding *bFriends = [[FriendsService FriendsBinding] retain];
 	bFriends.logXMLInOut = YES;
 	bFriends.authUsername = u.text;
