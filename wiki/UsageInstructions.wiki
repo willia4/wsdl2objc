@@ -105,3 +105,9 @@ Assume the following:
 // ...
 }
 }}}
+
+----
+Note the following, regarding strings with attributes:
+If a WSDL has defined a string type that has attributes, then wsdl2objc will map it to a generic NSObject with a property called "_content" which will hold the actual string.
+So if you want to use the string, you have to call object._content. If you want its attributes, they're also properties of the object.
+The short reason for this is that Cocoa makes it very hard to subclass NSStrings.
