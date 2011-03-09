@@ -1,3 +1,30 @@
 #summary Authentication options, handling defined server exceptions, SOAPSecurity, etc.
 
 = Authentication options =
+As it is shown in the linked [http://code.google.com/p/wsdl2objc/wiki/UsageInstructions#Example example], you can set the username and password used in a case of a basic HTTP authentication required by the server. In this section we show all the authentication options that are currently supported.
+
+== The authentication properties dictionary ==
+All the authentication options can be accessed by setting appropriate flags in the *authenticationProperties* dictionary of the *binding*.
+
+As top level keys, you should provide the identifiers of the authentication methods you would like to handle. For each key you should provide a new dictionary with the appropriate options set. Currently only the following identifiers are accepted:
+  * NSURLAuthenticationMethodHTTPBasic
+  * NSURLAuthenticationMethodClientCertificate
+  * NSURLAuthenticationMethodServerTrust 
+
+=== NSURLAuthenticationMethodHTTPBasic ===
+This method should be used in a case of a basic HTTP authentication (username/password). The dictionary provided under this key should contain the following keys:
+  * kClientUsername *(mandatory)*
+  * kClientPassword *(mandatory)*
+  * kNSURLCredentialPersistence
+
+If kNSURLCredentialPersistence key is set, it should contain the NSNumber representation of the NSURLCredentialPersistance enum. That is, the NSNumber representation to one of:
+  * NSURLCredentialPersistenceNone
+  * NSURLCredentialPersistenceForSession
+  * NSURLCredentialPersistencePermanent
+
+If not set NSURLCredentialPersistenceForSession is used by default.
+
+=== NSURLAuthenticationMethodClientCertificate ===
+*TODO*
+=== NSURLAuthenticationMethodServerTrust ===
+*TODO*
