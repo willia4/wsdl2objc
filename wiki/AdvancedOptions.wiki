@@ -25,10 +25,11 @@ If kNSURLCredentialPersistence key is set, it should contain the NSNumber repres
 If not set NSURLCredentialPersistenceForSession is used by default.
 ----
 {{{
+       NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
        NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
                                      @"my username", kClientUsername,
                                      @"my password", kClientPassword,
-                                     [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession],kNSURLCredentialPersistence,
+                                     persistance, kNSURLCredentialPersistence,
                                      nil];
        NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
                                                                    forKey:NSURLAuthenticationMethodHTTPBasic];
