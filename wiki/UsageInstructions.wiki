@@ -1,4 +1,6 @@
 #labels Featured
+#Summary instructions on how to use the generated code from WSDL2ObjC
+
 = First steps =
 == Generating code out of the WSDL file ==
 Once you obtain WSDL2ObjC, code generation is pretty simple.
