@@ -1,1 +1,3 @@
+#summary Authentication options, handling defined server exceptions, SOAPSecurity, etc.
+
 = Authentication options =
