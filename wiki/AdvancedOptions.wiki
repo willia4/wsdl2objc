@@ -23,6 +23,19 @@ If kNSURLCredentialPersistence key is set, it should contain the NSNumber repres
   * NSURLCredentialPersistencePermanent
 
 If not set NSURLCredentialPersistenceForSession is used by default.
+----
+{{{
+       NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
+                                     @"my username", kClientUsername,
+                                     @"my password", kClientPassword,
+                                     [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession],kNSURLCredentialPersistence,
+                                     nil];
+       NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
+                                                                   forKey:NSURLAuthenticationMethodHTTPBasic];
+        
+       binding.authenticationProperties = authProperties;        
+}}}
+----
 
 === NSURLAuthenticationMethodClientCertificate ===
 *TODO*
