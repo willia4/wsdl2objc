@@ -1,6 +1,8 @@
 #summary Instructions on how to use the generated code from WSDL2ObjC
 #labels Featured
 
+= First steps =
+== Generating code out of the WSDL file ==
 Once you obtain WSDL2ObjC, code generation is pretty simple.
 
   # Launch the app
@@ -8,9 +10,12 @@ Once you obtain WSDL2ObjC, code generation is pretty simple.
   # Browse to an output directory
   # Click "Parse WSDL"
 
-Source code files will be added to the output directory you've specified.  There will be one pair of .h/.m files for each namespace in your WSDL.
+Source code files will be added to the output directory you've specified.<br>
+There will be one pair of .h/.m files for each namespace in your WSDL.
 
-You can add the output files to your project or create a web service framework from them.  Each project that uses the generated web service code will need to link against libxml2 by performing the following for each target in your XCode project:
+== Including the generated source files ==
+You can add the output files to your project or create a web service framework from them. <br>
+Each project that uses the generated web service code will need to link against *libxml2* by performing the following for each target in your XCode project:
 
   # Get info on the target and go to the build tab
   # Add "-lxml2" to the Other Linker Flags property
@@ -19,10 +24,10 @@ You can add the output files to your project or create a web service framework f
 If you are building an iPhone project also perform the following:
 
  # Right click on the Frameworks folder in your project and select Add -> Existing Frameworks...
- # Select the CFNetwork.framework appropriate for your iPhone build
+ # Select the *CFNetwork.framework* appropriate for your iPhone build
 
+== Using the generated code ==
 You can use a given web service as follows:
-
 {{{
 #import "MyWebService.h"
 
@@ -56,19 +61,25 @@ for(id bodyPart in responseBodyParts) {
 }
 }}}
 
-----
-Here's another code sample:
+=== Example ===
 Assume the following:
   * A SOAP service called "Friends"
   * A SOAP method called GetFavoriteColor that has a request attribute called Friend, and a response attribute called Color (i.e. you're asking it to return you the favorite color for a given a friend)
-  * All the methods in this service need HTTP authentication, using a username and password that you acquired from the user via text fields
+  * All the methods in this service ask for basic HTTP authentication, using a username and password that you acquired from the user via text fields
 
 {{{
 - (IBAction)pressedRequestButton:(id)sender {
 	FriendsBinding *bFriends = [[FriendsService FriendsBinding] retain];
 	bFriends.logXMLInOut = YES;
-	bFriends.authUsername = u.text;
-	bFriends.authPassword = p.text;
+       
+        NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
+                                     u.text, kClientUsername,
+                                     p.text, kClientPassword,
+                                     nil];
+        NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
+                                                                   forKey:NSURLAuthenticationMethodHTTPBasic];
+        
+        bFriends.authenticationProperties = authProperties;        
 	types_getFavoriteColorRequestType *cRequest = [[types_getFavoriteColorRequestType new] autorelease];
 	cRequest.friend = @"Johnny";
 	[bFriends getFavoriteColorAsyncUsingRequest:cRequest delegate:self];
@@ -106,8 +117,10 @@ Assume the following:
 }
 }}}
 
+= Advanced options =
+Please follow the [http://code.google.com/p/wsdl2objc/wiki/AdvancedOptions link] to check some of the more advanced options that are out of scope for this page. 
 ----
-Note the following, regarding strings with attributes:
+=== NOTE ===
 If a WSDL has defined a string type that has attributes, then wsdl2objc will map it to a generic NSObject with a property called "_content" which will hold the actual string.
 So if you want to use the string, you have to call object._content. If you want its attributes, they're also properties of the object.
 The short reason for this is that Cocoa makes it very hard to subclass NSStrings.
