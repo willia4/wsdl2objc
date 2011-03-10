@@ -49,7 +49,9 @@ The following keys are accepted:
   * kNSURLCredentialPersistence
 
 It is out of scope to describe how you can get the identity and the certificate if the client, but we shell mention that in order to do that you would need to somehow bundle a PCKS12 keystore containing the stuff together with the application.
-In order to get the *identity* and the *certificates* 
+
+
+*TODO*
 ----
 {{{
        NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
