@@ -1,4 +1,5 @@
 #summary Authentication options, handling defined server exceptions, SOAPSecurity, etc.
+#labels Featured
 
 = Authentication options =
 As it is shown in the linked [http://code.google.com/p/wsdl2objc/wiki/UsageInstructions#Example example], you can set the username and password used in a case of a basic HTTP authentication required by the server. In this section we show all the authentication options that are currently supported.
