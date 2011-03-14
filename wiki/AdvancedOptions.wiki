@@ -48,20 +48,54 @@ The following keys are accepted:
   * kClientCertificates *(mandatory)*
   * kNSURLCredentialPersistence
 
-It is out of scope to describe how you can get the identity and the certificate if the client, but we shell mention that in order to do that you would need to somehow bundle a PCKS12 keystore containing the stuff together with the application.
+It is out of scope to describe how you can get the identity and the certificate of the client, but we shell mention that in order to do that you would need to somehow bundle the PKCS12 keystore, containing the stuff, together with the application. Once you have the bytes of the PKCS12 file and it's password you can do something like:
 
-
-*TODO*
 ----
 {{{
+- (NSArray *)importPKCS12
+{
+    static NSArray *pkcs12 = nil;
+    if (!pkcs12) {
+        NSData *pkcsData = [self dataPKCS12];
+        NSString *password = [self passwordPKCS12];
+        
+        OSStatus sanityChesk = SecPKCS12Import((CFDataRef)pkcsData, 
+                                               (CFDictionaryRef)[NSDictionary dictionaryWithObject:password 
+                                                                                            forKey:(id)kSecImportExportPassphrase], 
+                                               (CFArrayRef *)&pkcs12);
+        // check that sanityChesk == noErr
+        [pkcs12 retain];
+    }
+    
+    return pkcs12;
+}
+
+- (SecIdentityRef)clientIdentity
+{
+    SecIdentityRef identity = (SecIdentityRef)[[[self importPKCS12] objectAtIndex:0]
+                                               objectForKey:(id)kSecImportItemIdentity];
+    return identity;
+}
+
+- (NSArray *)clientCertificates
+{
+    NSArray *certs = [[[self importPKCS12] objectAtIndex:0]
+                      objectForKey:(id)kSecImportItemCertChain];
+    return certs;
+}
+}}}
+
+And then include the identity and the certificates into the authentication properties of the bundle
+{{{
+
        NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
        NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     @"my username", kClientUsername,
-                                     @"my password", kClientPassword,
+                                     (id)[self clientIdentity], kClientIdentity,
+                                     [self clientCertificates], kClientCertificates,
                                      persistance, kNSURLCredentialPersistence,
                                      nil];
        NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
-                                                                   forKey:NSURLAuthenticationMethodHTTPBasic];
+                                                                   forKey:NSURLAuthenticationMethodClientCertificate];
         
        binding.authenticationProperties = authProperties;        
 }}}
