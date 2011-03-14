@@ -174,4 +174,9 @@ All of this codes are provided to handle different situations where the user has
        ...
 }}}
 
+= Handling defined faults =
+TODO
+
+= SOAPSecurity =
+TODO
  
