@@ -25,6 +25,7 @@ If kNSURLCredentialPersistence key is set, it should contain the NSNumber repres
 If not set NSURLCredentialPersistenceForSession is used by default.
 ----
 {{{
+       ...
        NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
        NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
                                      @"my username", kClientUsername,
@@ -35,6 +36,7 @@ If not set NSURLCredentialPersistenceForSession is used by default.
                                                                    forKey:NSURLAuthenticationMethodHTTPBasic];
         
        binding.authenticationProperties = authProperties;        
+       ...
 }}}
 ----
 
@@ -87,7 +89,7 @@ It is out of scope to describe how you can get the identity and the certificate 
 
 And then include the identity and the certificates into the authentication properties of the bundle
 {{{
-
+       ...
        NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
        NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
                                      (id)[self clientIdentity], kClientIdentity,
@@ -98,8 +100,78 @@ And then include the identity and the certificates into the authentication prope
                                                                    forKey:NSURLAuthenticationMethodClientCertificate];
         
        binding.authenticationProperties = authProperties;        
+       ...
 }}}
 ----
+It's worth mentioning that some of the security API methods are missing on MAC OS X, so the above code *will not work* on simulator (device only).
 
 === NSURLAuthenticationMethodServerTrust ===
-*TODO*
+The last authentication method supported should be used in a case of a self-signed server certificates. As for the previous method, it should be used *only for iPhone* applications as on MAC OS X the user can set the proper trust settings using Keychain Access. 
+
+The dictionary provided under this key should contain the following keys:
+  * kServerAnchorCertificates *(mandatory)*
+  * kServerAnchorsOnly *(mandatory)*
+  * kValidateResult *(mandatory)*
+
+The first key should hold an array of all anchor certificates which you would like the server certificate to be validated against. Usually this would be the self-signed CA that issued the certificate. Again, you would need it's bytes into the application.
+
+The second key should hold a boolean value, represented as NSNumber, stating wether the system should validate the server certificate against the provided anchors only (YES), or it should also include the system root certificates (NO). Usually you would like to pass YES here.
+
+Finally the last key should hold a NSValue representation of your validation result callback. The callback should accept one argument (NSNumber representation of the validation result), and should return YES if the result is acceptable, or NO otherwise.<br>
+The possible validation results are:
+  * kSecTrustResultInvalid
+  * kSecTrustResultProceed
+  * kSecTrustResultConfirm
+  * kSecTrustResultDeny
+  * kSecTrustResultUnspecified
+  * kSecTrustResultRecoverableTrustFailure
+  * kSecTrustResultFatalTrustFailure
+  * kSecTrustResultOtherError
+
+All of this codes are provided to handle different situations where the user has the opportunity to choose wether to trust some certificate or not (e.g. when accessing via web browser). In general you should return YES for the *Proceed*, *Confirm* and *Unspecified* cases, and NO for all of the rest. For more info please check the iPhone SDK documentation.
+----
+{{{
+- (NSArray *)serverAnchors 
+{
+    static NSArray *anchors = nil;
+    if (!anchors) {
+        NSData *caData = [self dataCA];
+        SecCertificateRef caRef = SecCertificateCreateWithData(kCFAllocatorDefault, (CFDataRef) caData);
+        
+        anchors = [[NSArray arrayWithObject:(id)caRef] retain];
+        CFRelease(caRef);
+    }
+    
+    return anchors;
+}
+
+- (BOOL)trustCertificate:(NSNumber *)res
+{
+    int result = [res intValue];
+    if (result == kSecTrustResultProceed
+        || result == kSecTrustResultConfirm
+        || result == kSecTrustResultUnspecified) {
+        return YES;
+    }
+    
+    return NO;
+}
+}}}
+
+{{{
+       ...
+       NSValue *callback = [NSValue valueWithPointer:@selector(trustCertificate:)];       
+       NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
+                                     (id)[self serverAnchors], kServerAnchorCertificates,
+                                     [NSNumber numberWithBool:YES], kServerAnchorsOnly,
+                                     callback, kValidateResult,
+                                     nil];
+       NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
+                                                                   NSURLAuthenticationMethodServerTrust];
+        
+       binding.authenticationProperties = authProperties;        
+
+       ...
+}}}
+
+ 
