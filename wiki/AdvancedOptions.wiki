@@ -181,7 +181,5 @@ TODO
 = SOAPSecurity =
 *SOAP signing is currently disabled due to issue 139:*
 
-http://code.google.com/p/wsdl2objc/issues/detail?id=139
-
 TODO
  
