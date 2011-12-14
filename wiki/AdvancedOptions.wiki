@@ -1,178 +1,199 @@
 #summary Authentication options, handling defined server exceptions, SOAPSecurity, etc.
 #labels Featured
 
+This page covers some of the more advanced options, not available in versions 0.6 and 0.7-pre1.<br>
+
 = Authentication options =
-As it is shown in the linked [http://code.google.com/p/wsdl2objc/wiki/UsageInstructions#Example example], you can set the username and password used in a case of a basic HTTP authentication required by the server. In this section we show all the authentication options that are currently supported.
+In order to provide proper support for advanced authentication, the SSL authentication logic has been removed from the generated code, and delegated to a user-defined delegate. The delegate will have to implement the *[http://code.google.com/p/wsdl2objc/source/browse/trunk/Templates/WSDL2ObjC%20Standard%20Additions/USAdditions_H.template SSLCredentialsManaging]* protocol, defined in the generated sources.
 
-== The authentication properties dictionary ==
-All the authentication options can be accessed by setting appropriate flags in the *authenticationProperties* dictionary of the *binding*.
+== Basic Authentication ==
+The generated code, provides a simple [http://code.google.com/p/wsdl2objc/source/browse/trunk/Templates/WSDL2ObjC%20Standard%20Additions/USAdditions_H.template implementation] of the protocol, which can be used for basic SSL authentication.
 
-As top level keys, you should provide the identifiers of the authentication methods you would like to handle. For each key you should provide a new dictionary with the appropriate options set. Currently only the following identifiers are accepted:
-  * NSURLAuthenticationMethodHTTPBasic
-  * NSURLAuthenticationMethodClientCertificate
-  * NSURLAuthenticationMethodServerTrust 
-
-=== NSURLAuthenticationMethodHTTPBasic ===
-This method should be used in a case of a basic HTTP authentication (username/password). The dictionary provided under this key should contain the following keys:
-  * kClientUsername *(mandatory)*
-  * kClientPassword *(mandatory)*
-  * kNSURLCredentialPersistence
-
-If kNSURLCredentialPersistence key is set, it should contain the NSNumber representation of the NSURLCredentialPersistance enum. That is, the NSNumber representation to one of:
-  * NSURLCredentialPersistenceNone
-  * NSURLCredentialPersistenceForSession
-  * NSURLCredentialPersistencePermanent
-
-If not set NSURLCredentialPersistenceForSession is used by default.
-----
+To use it, you just need to instantiate the delegate with an username and password, and set the *sslManager* property of the binding:
 {{{
-       ...
-       NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
-       NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     @"my username", kClientUsername,
-                                     @"my password", kClientPassword,
-                                     persistance, kNSURLCredentialPersistence,
-                                     nil];
-       NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
-                                                                   forKey:NSURLAuthenticationMethodHTTPBasic];
-        
-       binding.authenticationProperties = authProperties;        
-       ...
+...
+BasicSSLCredentialsManager *manager = 
+    [BasicSSLCredentialsManager managerWithUsername:u.text andPassword:p.text];
+       
+binding.sslManager = manager;        
+...
 }}}
-----
 
-=== NSURLAuthenticationMethodClientCertificate ===
-If you need a more advanced client authentication method, than the basic HTTP one, you can use the client certificate authentication method.
+You can check the implementation of the *BasicSSLCredentialsManager*  [http://code.google.com/p/wsdl2objc/source/browse/trunk/Templates/WSDL2ObjC%20Standard%20Additions/USAdditions_M.template here].
 
-*NOTE* that on *Mac OS X*, the client certificate that should be used is configured by the user via the *Keychain Access* application and is sent automatically by the system. So you should set this method *only* if you need a client certificate authentication in your *iPhone* application.
-
-The following keys are accepted:
-  * kClientIdentity *(mandatory)*
-  * kClientCertificates *(mandatory)*
-  * kNSURLCredentialPersistence
-
-It is out of scope to describe how you can get the identity and the certificate of the client, but we shell mention that in order to do that you would need to somehow bundle the PKCS12 keystore, containing the stuff, together with the application. Once you have the bytes of the PKCS12 file and it's password you can do something like:
-
-----
+== Self-signed server certificate ==
+If your application connects to a server which has a self-signed certificate, then simply letting the system to validate the server will not do the job, as the received certificate would come from an unknown certificate authority.<br>
+In this case, you need to tell the system which certificate authorities you are expecting, and handle the validation process manually. In order to do this you need a couple of things:
+ * The root certificate that have signed the server side certificate. <br> One way to get this in your code is by making it part of your application binary, and then generating a NSData instance out of it:
 {{{
-- (NSArray *)importPKCS12
+- (NSData *)dataCA
 {
-    static NSArray *pkcs12 = nil;
-    if (!pkcs12) {
+    uint8_t bytes[] = {CA_BYTES};
+    return [NSData dataWithBytes:bytes length:CA_LENGTH];
+}
+}}}
+ * A NSArray holding the references of all the root certificates you need to support (in this case only one):
+{{{
+- (NSArray *) serverAnchors
+{
+    static NSArray *anchors = nil;
+    if (!anchors) {
+        NSData *caData = [self dataCA];
+        SecCertificateRef caRef = SecCertificateCreateWithData(kCFAllocatorDefault, (CFDataRef) caData);
+      
+        anchors = [[NSArray arrayWithObjects:(id)caRef,  nil] retain];
+        
+        if (caRef) {
+            CFRelease(caRef);   
+        }
+    }
+    
+    return anchors;
+}
+}}}
+
+ * A proper *SSLCredentialsManaging* protocol implementation. <br> In the code below we give only the most important part of the implementation, which basically tell the system that we want to handle the authentication manually, and then validates the server certificate received:
+{{{
+- (BOOL)canAuthenticateForAuthenticationMethod:(NSString *)authMethod
+{
+    return [authMethod isEqualToString:NSURLAuthenticationMethodServerTrust];
+}
+}}}
+{{{
+- (BOOL)validateResult:(SecTrustResultType)res
+{
+    if ((res == kSecTrustResultProceed)                 // trusted certificate
+        || ((res == kSecTrustResultConfirm)             // valid but user should be asked for confirmation
+            || (res == kSecTrustResultUnspecified)      // valid but user have not specified wheter to trust
+            || (res == kSecTrustResultDeny)             // valid but user does not trusts this certificate
+            )
+        )
+    {
+        return YES;
+    } 
+    
+    return NO;
+}
+
+- (BOOL)authenticateForChallenge:(NSURLAuthenticationChallenge *)challenge
+{
+    if ([challenge previousFailureCount] > 0) {        
+        return NO;
+    }
+    
+    NSURLCredential *newCredential = nil;
+    NSURLProtectionSpace *protectionSpace = [challenge protectionSpace];
+    SecurityCenter *securityCenter = [SecurityCenter sharedInstance];
+    
+    // server authentication - NSURLAuthenticationMethodServerTrust
+    if ([protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
+        SecTrustRef trust = [protectionSpace serverTrust];
+        NSArray *anchors = [securityCenter serverAnchors];
+        SecTrustSetAnchorCertificates(trust, (CFArrayRef)anchors);
+        SecTrustSetAnchorCertificatesOnly(trust, YES);
+        
+        
+        SecTrustResultType res = kSecTrustResultInvalid;
+        OSStatus sanityChesk = SecTrustEvaluate(trust, &res);
+               
+        if ((sanityChesk == noErr) 
+            && [self validateResult:res]) {
+            
+            newCredential = [NSURLCredential credentialForTrust:trust];
+            [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];
+            
+            return YES;
+        }
+        
+        return NO;
+    }
+    
+    [NSException raise:@"Authentication method not supported" format:@"%@ not supported.", [protectionSpace authenticationMethod]];
+    return NO;
+}
+}}}
+
+== Client-side certificate authentication ==
+Some services (e.g. eBanking) are intended to be consumed only by a defined set of client applications. In this case you might need to use 2-way SSL, which asks the client application to authenticate with proper certificate. <br> To do this, you would need the following:
+ * NSData representation of a PKCS12 key store, holding the certificate and the private key for the client. <br> One way to do this is to integrate the key store as part of the application's byte code.
+{{{
+- (NSData *)dataPKCS12
+{
+    uint8_t bytes[] = {PKCS12_BYTES};
+    return [NSData dataWithBytes:bytes length:PKCS12_LENGTH];
+}
+}}}
+ * NSArray, in this case named *keystores*, which holds all the key/certificate entries in the key store, each represented by a single NSDictionary instance:
+{{{
+- (void)importPKCS12
+{
+    if (!keystores) {
         NSData *pkcsData = [self dataPKCS12];
         NSString *password = [self passwordPKCS12];
         
         OSStatus sanityChesk = SecPKCS12Import((CFDataRef)pkcsData, 
                                                (CFDictionaryRef)[NSDictionary dictionaryWithObject:password 
                                                                                             forKey:(id)kSecImportExportPassphrase], 
-                                               (CFArrayRef *)&pkcs12);
-        // check that sanityChesk == noErr
-        [pkcs12 retain];
+                                               (CFArrayRef *)&keystores);
+        CHECK_CONDITION1(sanityChesk == noErr, @"Error while importing pkcs12 [%d]", sanityChesk);
+        [keystores retain];
     }
-    
-    return pkcs12;
 }
-
+}}}
+ * Logic to extract the *identity* and *certificates* for the client. <br> In this example the *clientKeyStore* variable points to one of the entries in the *keystores* variable mentioned above:
+{{{
 - (SecIdentityRef)clientIdentity
 {
-    SecIdentityRef identity = (SecIdentityRef)[[[self importPKCS12] objectAtIndex:0]
-                                               objectForKey:(id)kSecImportItemIdentity];
-    return identity;
+    return (SecIdentityRef)[clientKeyStore objectForKey:(id)kSecImportItemIdentity];
 }
 
 - (NSArray *)clientCertificates
 {
-    NSArray *certs = [[[self importPKCS12] objectAtIndex:0]
-                      objectForKey:(id)kSecImportItemCertChain];
-    return certs;
+    return [clientKeyStore objectForKey:(id)kSecImportItemCertChain];
 }
 }}}
-
-And then include the identity and the certificates into the authentication properties of the bundle
+ * A proper *SSLCredentialsManaging* protocol implementation. <br> In the code below we give only the most important part of the implementation, which basically tell the system that we want to handle the authentication manually, and then authenticates the client with a certificate:
 {{{
-       ...
-       NSNumber *persistance = [NSNumber numberWithUnsignedInteger:NSURLCredentialPersistenceForSession];
-       NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     (id)[self clientIdentity], kClientIdentity,
-                                     [self clientCertificates], kClientCertificates,
-                                     persistance, kNSURLCredentialPersistence,
-                                     nil];
-       NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
-                                                                   forKey:NSURLAuthenticationMethodClientCertificate];
-        
-       binding.authenticationProperties = authProperties;        
-       ...
-}}}
-----
-It's worth mentioning that some of the security API methods are missing on MAC OS X, so the above code *will not work* on simulator (device only).
-
-=== NSURLAuthenticationMethodServerTrust ===
-The last authentication method supported should be used in a case of a self-signed server certificates. As for the previous method, it should be used *only for iPhone* applications as on MAC OS X the user can set the proper trust settings using Keychain Access. 
-
-The dictionary provided under this key should contain the following keys:
-  * kServerAnchorCertificates *(mandatory)*
-  * kServerAnchorsOnly *(mandatory)*
-  * kValidateResult *(mandatory)*
-
-The first key should hold an array of all anchor certificates which you would like the server certificate to be validated against. Usually this would be the self-signed CA that issued the certificate. Again, you would need it's bytes into the application.
-
-The second key should hold a boolean value, represented as NSNumber, stating wether the system should validate the server certificate against the provided anchors only (YES), or it should also include the system root certificates (NO). Usually you would like to pass YES here.
-
-Finally the last key should hold a NSValue representation of your validation result callback. The callback should accept one argument (NSNumber representation of the validation result), and should return YES if the result is acceptable, or NO otherwise.<br>
-The possible validation results are:
-  * kSecTrustResultInvalid
-  * kSecTrustResultProceed
-  * kSecTrustResultConfirm
-  * kSecTrustResultDeny
-  * kSecTrustResultUnspecified
-  * kSecTrustResultRecoverableTrustFailure
-  * kSecTrustResultFatalTrustFailure
-  * kSecTrustResultOtherError
-
-All of this codes are provided to handle different situations where the user has the opportunity to choose wether to trust some certificate or not (e.g. when accessing via web browser). In general you should return YES for the *Proceed*, *Confirm* and *Unspecified* cases, and NO for all of the rest. For more info please check the iPhone SDK documentation.
-----
-{{{
-- (NSArray *)serverAnchors 
+- (BOOL)canAuthenticateForAuthenticationMethod:(NSString *)authMethod
 {
-    static NSArray *anchors = nil;
-    if (!anchors) {
-        NSData *caData = [self dataCA];
-        SecCertificateRef caRef = SecCertificateCreateWithData(kCFAllocatorDefault, (CFDataRef) caData);
-        
-        anchors = [[NSArray arrayWithObject:(id)caRef] retain];
-        CFRelease(caRef);
-    }
-    
-    return anchors;
+    return [authMethod isEqualToString:NSURLAuthenticationMethodClientCertificate];
 }
-
-- (BOOL)trustCertificate:(NSNumber *)res
+}}}
+{{{
+- (BOOL)authenticateForChallenge:(NSURLAuthenticationChallenge *)challenge
 {
-    int result = [res intValue];
-    if (result == kSecTrustResultProceed
-        || result == kSecTrustResultConfirm
-        || result == kSecTrustResultUnspecified) {
-        return YES;
+    if ([challenge previousFailureCount] > 0) {        
+        return NO;
     }
     
+    NSURLCredential *newCredential = nil;
+    NSURLProtectionSpace *protectionSpace = [challenge protectionSpace];
+    SecurityCenter *securityCenter = [SecurityCenter sharedInstance];
+    
+    // client authentication - NSURLAuthenticationMethodClientCertificate
+    if ([protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodClientCertificate]) {
+       
+        NSArray *acceptedIssuers = [protectionSpace distinguishedNames];
+        [securityCenter setIssuerDistinguishedNames:acceptedIssuers];
+        
+        SecIdentityRef identity = (SecIdentityRef)[securityCenter clientIdentity];
+        NSArray *certs = [securityCenter clientCertificates];
+        
+        if (identity && certs) {
+            newCredential = [NSURLCredential credentialWithIdentity:identity
+                                                       certificates:certs
+                                                        persistence:NSURLCredentialPersistenceNone];
+            [[challenge sender] useCredential:newCredential forAuthenticationChallenge:challenge];
+            
+            return YES;
+        }
+        
+        return NO;
+    }
+    
+    [NSException raise:@"Authentication method not supported" format:@"%@ not supported.", [protectionSpace authenticationMethod]];
     return NO;
 }
-}}}
-
-{{{
-       ...
-       NSValue *callback = [NSValue valueWithPointer:@selector(trustCertificate:)];       
-       NSDictionary *credentials = [NSDictionary dictionaryWithObjectsAndKeys:
-                                     (id)[self serverAnchors], kServerAnchorCertificates,
-                                     [NSNumber numberWithBool:YES], kServerAnchorsOnly,
-                                     callback, kValidateResult,
-                                     nil];
-       NSDictionary *authProperties = [NSDictionary dictionaryWithObject:credentials 
-                                                                   NSURLAuthenticationMethodServerTrust];
-        
-       binding.authenticationProperties = authProperties;        
-
-       ...
 }}}
 
 = Handling defined faults =
