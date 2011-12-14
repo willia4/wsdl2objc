@@ -195,6 +195,9 @@ Some services (e.g. eBanking) are intended to be consumed only by a defined set 
     return NO;
 }
 }}}
+----
+=== NOTE ===
+Pay some extra attention on how you will make the CAs and the PKCS12 key store available to the application. E.g. A simple hex dump of the application may reveal this data to a potential attacker. Make sure you always use some sort of encryption, or at least byte-masking before integrating the data to your binary.
 
 = Handling defined faults =
 TODO
