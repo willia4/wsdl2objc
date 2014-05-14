@@ -36,7 +36,12 @@ static BOOL is_leap_year(unsigned year) {
   NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
   [formatter setDateFormat: dateFormat];
   [formatter setTimeZone:[NSTimeZone timeZoneWithName:@"UTC"]];
-  
+
+   // BUG: Set to US locale so that "AM" or "PM" doesn't automatically get appended
+   // see http://stackoverflow.com/questions/143075/nsdateformatter-am-i-doing-something-wrong-or-is-this-a-bug
+   // and http://developer.apple.com/library/ios/#qa/qa1480/_index.html
+  formatter.locale = [[[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"] autorelease];
+
   NSString *str = [formatter stringForObjectValue:self];
   [formatter release];
   if(includeTime) {
