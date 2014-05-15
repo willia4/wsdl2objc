@@ -638,7 +638,7 @@ xmlXPathObjectPtr execute_xpath_expression(xmlDocPtr doc, const xmlChar* xpathEx
     // convert request back to xmlDoc
     NSData *reqData = [req dataUsingEncoding:NSUTF8StringEncoding];
     xmlDocPtr doc = xmlReadMemory([reqData bytes], 
-                                  [reqData length], 
+                                  (int) [reqData length],  // Cast to (int) to remove 64-bit warning; function is limited to (int)
                                   NULL, 
                                   NULL, 
                                   XML_PARSE_COMPACT | XML_PARSE_NOBLANKS);
