@@ -116,7 +116,7 @@ BOOL classExists (NSString *className) {
 
 - (BOOL)isRegularFileAtPath:(NSString *)path
 {
-	return ([[[self fileAttributesAtPath:path traverseLink:YES] fileType]
+	return ([[[self attributesOfItemAtPath:path error:nil] fileType]
 		isEqualToString:@"NSFileTypeRegular"]);
 } // end method
 
