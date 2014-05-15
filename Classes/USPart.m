@@ -43,12 +43,6 @@
 	return self;
 }
 
-- (void) dealloc
-{
-    [name release];
-    [element release];
-    [super dealloc];
-}
 
 - (NSString *)uname
 {

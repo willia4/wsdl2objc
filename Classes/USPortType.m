@@ -41,12 +41,6 @@
 	return self;
 }
 
-- (void) dealloc
-{
-    [name release];
-    [operations release];
-    [super dealloc];
-}
 
 - (USOperation *)operationForName:(NSString *)aName
 {
@@ -60,7 +54,6 @@
 	newOperation.name = aName;
 	newOperation.portType = self;
 	[self.operations addObject:newOperation];
-    [newOperation release];
 	
 	return newOperation;
 }

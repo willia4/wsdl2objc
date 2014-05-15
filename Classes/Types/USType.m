@@ -56,16 +56,6 @@
 	return self;
 }
 
-- (void) dealloc
-{
-    [typeName release];
-    [representationClass release];
-    [enumerationValues release];
-    [superClass release];
-    [sequenceElements release];
-    [attributes release];
-    [super dealloc];
-}
 
 - (BOOL)isSimpleType
 {

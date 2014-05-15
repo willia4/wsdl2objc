@@ -48,13 +48,6 @@
 	return self;
 }
 
-- (void) dealloc
-{
-    [name release];
-    [wsdlName release];
-    [waitingSeqElements release];
-    [super dealloc];
-}
 
 - (void)setName:(NSString *)aName
 {
@@ -65,7 +58,7 @@
 		aName = [NSString stringWithFormat:@"%@_", aName];
 	}
 	
-	if(name != nil) [name autorelease];
+    // EricBe: autorelease -> release for ARC
 	name = [aName copy];
 }
 

@@ -38,7 +38,7 @@
 {
 	if((self = [super init])) {
 		self.name = nil;
-		self.portType = [[USPortType new] autorelease];
+		self.portType = [USPortType new];
         self.soapVersion = @"1.1";
 		self.schema = nil;
 	}
@@ -46,13 +46,6 @@
 	return self;
 }
 
-- (void) dealloc
-{
-    [name release];
-    [portType release];
-    [soapVersion release];
-    [super dealloc];
-}
 
 - (NSString *)className
 {

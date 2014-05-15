@@ -44,12 +44,6 @@
 	return self;
 }
 
-- (void) dealloc
-{
-    [name release];
-    [ports release];
-    [super dealloc];
-}
 
 - (USPort *)portForName:(NSString *)aName
 {
@@ -63,7 +57,6 @@
 	newPort.service = self;
 	newPort.name = aName;
 	[self.ports addObject:newPort];
-    [newPort release];
 	
 	return newPort;
 }

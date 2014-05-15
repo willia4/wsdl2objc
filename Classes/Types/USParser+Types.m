@@ -259,7 +259,6 @@
 					[el removeChildAtIndex:childIdx];
 					NVLOG(@"*** Reprocessing a type: %@", elType);
 					[self processSequenceElementElement:el type:type];
-                    [seqElement release];
 					return;
 				}
 				childIdx++;
@@ -291,7 +290,6 @@
 	}
 	
 	[type.sequenceElements addObject:seqElement];
-    [seqElement release];
 }
 
 - (void)processComplexContentElement:(NSXMLElement *)el type:(USType *)type
@@ -500,7 +498,6 @@
 	} else {
 		[type.attributes addObject:attribute];
 	}
-    [attribute release];
 }
 
 - (void)processAttributeElementChildElement:(NSXMLElement *)el attribute:(USAttribute *)attribute
