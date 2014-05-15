@@ -71,21 +71,6 @@
 }
 
 
-- (void)dealloc
-{
-	[fullName release];
-    [prefix release];
-    [localPrefix release];
-	[types release];
-	[elements release];
-	[attributes release];
-	[imports release];
-	[messages release];
-	[portTypes release];
-	[bindings release];
-	[services release];
-	[super dealloc];
-}
 
 - (USType *)typeForName:(NSString *)aName
 {
@@ -103,7 +88,6 @@
 	newType.schema = self;
 	
 	[self.types addObject:newType];
-    [newType release];
 	
 	// NSLog(@"New Type: %@ (%@)", newType.typeName, newType);
 	return newType;
@@ -130,7 +114,6 @@
 	newElement.schema = self;
 	
 	[self.elements addObject:newElement];
-    [newElement release];
 	
 	// NSLog(@"New Element: %@ (%@), type: %@ (%@)", newElement.name, newElement, newElement.type.typeName, newElement.type);
 	return newElement;
@@ -157,7 +140,6 @@
 	newAttribute.schema = self;
 	
 	[self.attributes addObject:newAttribute];
-    [newAttribute release];
 	
 	// NSLog(@"New attribute: %@ (%@), type: %@ (%@)", newattribute.name, newattribute, newattribute.type.typeName, newattribute.type);
 	return newAttribute;
@@ -177,7 +159,6 @@
 	newMessage.schema = self;
 	newMessage.name = aName;
 	[self.messages addObject:newMessage];
-    [newMessage release];
 	
 	return newMessage;
 }
@@ -196,7 +177,6 @@
 	newPortType.schema = self;
 	newPortType.name = aName;
 	[self.portTypes addObject:newPortType];
-    [newPortType release];
 	
 	return newPortType;
 }
@@ -215,7 +195,6 @@
 	newBinding.schema = self;
 	newBinding.name = aName;
 	[self.bindings addObject:newBinding];
-    [newBinding release];
 	
 	return newBinding;
 }
@@ -234,7 +213,6 @@
 	newService.schema = self;
 	newService.name = aName;
 	[self.services addObject:newService];
-    [newService release];
 	
 	return newService;
 }

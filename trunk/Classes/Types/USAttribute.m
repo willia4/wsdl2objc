@@ -43,13 +43,6 @@
 	return self;
 }
 
-- (void)dealloc
-{
-	[name release];
-	[wsdlName release];
-	[attributeDefault release];
-	[super dealloc];
-}
 
 - (NSDictionary *)templateKeyDictionary
 {
@@ -76,7 +69,7 @@
 		aName = [NSString stringWithFormat:@"%@_", aName];
 	}
 	
-	if(name != nil) [name autorelease];
+    // EricBe: autorelease -> Release to switch to ARC
 	name = [aName copy];
 }
 
