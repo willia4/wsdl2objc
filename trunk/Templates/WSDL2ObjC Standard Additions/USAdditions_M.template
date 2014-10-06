@@ -706,8 +706,8 @@ xmlXPathObjectPtr execute_xpath_expression(xmlDocPtr doc, const xmlChar* xpathEx
                                         "ds=http://www.w3.org/2000/09/xmldsig#");
     
     size = xmlC14NDocDumpMemory(doc, xpathObj->nodesetval, 1, NULL, 1, &canonicalized);
-    
-    NSData *signedData = [delegate signData:[NSData dataWithBytes:canonicalized length:size]];
+
+    NSData *signedData = [delegate signWSData:[NSData dataWithBytes:canonicalized length:size]];
     xmlFree(canonicalized);
     xmlXPathFreeObject(xpathObj);
     
