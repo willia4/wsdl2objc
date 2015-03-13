@@ -478,11 +478,12 @@ _content = nil;
  * http://davedelong.com/blog/2009/04/13/aspect-oriented-programming-objective-c
  */
 - (id) initWithCoder:(NSCoder *)decoder {
-	if ([super respondsToSelector:@selector(initWithCoder:)] && ![self isKindOfClass:[super class]]) {
-		self = [super performSelector:@selector(initWithCoder:) withObject:decoder];
-	} else {
-		self = [super init];
-	}
+	// ERICBE: XCode Analyze doesn't see below as a call to [super init] or [super initWithCoder];
+	// So we will just call [super init] THEN call initWithCoder.  A bit less efficient, but hey - this code never actually gets called!
+	self = [super init];
+	if ([super respondsToSelector:@selector(initWithCoder:)] && ![self isKindOfClass:[super class]])
+		[super performSelector:@selector(initWithCoder:) withObject:decoder];
+
 	if (self == nil) { return nil; }
  
 	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
